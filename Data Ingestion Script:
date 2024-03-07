@@ -1,0 +1,30 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    s3 = boto3.client('s3')
+    firehose = boto3.client('firehose')
+
+    for record in event['Records']:
+        # Extract data from the event
+        data = json.loads(record['body'])
+
+        # Determine the data source and format
+        if data['source'] == 'ad_impressions':
+            bucket = 'advertisex-impressions'
+            key = f'{data["timestamp"]}_impressions.json'
+        elif data['source'] == 'clicks_conversions':
+            bucket = 'advertisex-clicks-conversions'
+            key = f'{data["timestamp"]}_clicks_conversions.csv'
+        elif data['source'] == 'bid_requests':
+            bucket = 'advertisex-bid-requests'
+            key = f'{data["timestamp"]}_bid_requests.avro'
+        else:
+            print(f'Unknown data source: {data["source"]}')
+            continue
+
+        # Store data in S3
+        s3.put_object(Bucket=bucket, Key=key, Body=json.dumps(data))
+
+        # Send data to Kinesis Data Firehose for further processing
+        firehose.put_record(DeliveryStreamName='advertisex-stream', Record={'Data': json.dumps(data)})
