@@ -1,0 +1,29 @@
+import boto3
+
+# Initialize AWS Glue client
+glue = boto3.client('glue')
+
+# Define Glue job parameters
+glue_job_name = 'advertisex-data-processing'
+input_bucket = 'advertisex-raw-data'
+output_bucket = 'advertisex-processed-data'
+
+# Define Glue job script
+glue_job_script = {
+    'Name': glue_job_name,
+    'Role': 'AWSGlueServiceRole',
+    'Command': {
+        'Name': 'glueetl',
+        'ScriptLocation': 's3://<script_location>'
+    },
+    'DefaultArguments': {
+        '--input_bucket': input_bucket,
+        '--output_bucket': output_bucket
+    }
+}
+
+# Create Glue job
+glue.create_job(**glue_job_script)
+
+# Start Glue job execution
+glue.start_job_run(JobName=glue_job_name)
